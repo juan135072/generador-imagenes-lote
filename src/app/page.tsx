@@ -46,7 +46,7 @@ export default function Home() {
             <div className="p-2 bg-black dark:bg-white rounded-lg">
               <Sparkles className="w-5 h-5 text-white dark:text-black" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight">ProductAI Studio</h1>
+            <h1 className="text-xl font-bold tracking-tight">FotoEstudio AI</h1>
           </div>
           <div className="flex items-center gap-4">
             <button className="text-sm font-medium hover:opacity-80 transition-opacity">
