@@ -4,10 +4,10 @@
  */
 
 export async function analyzeProductImage(base64Image: string): Promise<string> {
-    const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY;
 
     if (!apiKey) {
-        throw new Error("Groq API Key (NEXT_PUBLIC_GROQ_API_KEY) is missing");
+        throw new Error("Groq API Key is missing");
     }
 
     // Ensure the base64 string doesn't include the data:image prefix if present

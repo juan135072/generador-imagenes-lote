@@ -4,10 +4,10 @@
  */
 
 export async function generateImage(prompt: string): Promise<string> {
-    const apiToken = process.env.NEXT_PUBLIC_HF_TOKEN;
+    const apiToken = process.env.HF_TOKEN || process.env.NEXT_PUBLIC_HF_TOKEN;
 
     if (!apiToken) {
-        throw new Error("Hugging Face API Token (NEXT_PUBLIC_HF_TOKEN) is missing");
+        throw new Error("Hugging Face API Token is missing");
     }
 
     try {
@@ -28,15 +28,10 @@ export async function generateImage(prompt: string): Promise<string> {
             throw new Error(`Hugging Face API Error: ${errorData.error || response.statusText}`);
         }
 
-        const blob = await response.blob();
-
-        // Convert Blob to Base64 for easier usage in the frontend
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64 = buffer.toString('base64');
+        return `data:image/png;base64,${base64}`;
     } catch (error) {
         console.error("Error generating image with FLUX:", error);
         throw error;

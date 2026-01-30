@@ -6,9 +6,8 @@ let client: OpenAI | null = null;
 const getClient = () => {
     if (client) return client;
     client = new OpenAI({
-        apiKey: process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || 'no-key-at-build-time',
+        apiKey: process.env.CEREBRAS_API_KEY || process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || 'no-key-at-build-time',
         baseURL: "https://api.cerebras.ai/v1",
-        dangerouslyAllowBrowser: true
     });
     return client;
 };
@@ -18,7 +17,7 @@ export async function generateCreativePrompt(
     userDescription: string,
     basePrompt: string
 ): Promise<{ positive: string, negative: string }> {
-    const key = process.env.NEXT_PUBLIC_CEREBRAS_API_KEY;
+    const key = process.env.CEREBRAS_API_KEY || process.env.NEXT_PUBLIC_CEREBRAS_API_KEY;
     if (!key) {
         console.warn("Cerebras API Key missing");
         return {
