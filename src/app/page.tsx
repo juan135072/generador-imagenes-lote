@@ -80,7 +80,10 @@ export default function Home() {
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               Define el fondo común, la iluminación y el ambiente para TODAS las imágenes de este lote.
             </p>
+            <label htmlFor="global-base-prompt" className="sr-only">Prompt Base Global</label>
             <textarea
+              id="global-base-prompt"
+              name="basePrompt"
               value={basePrompt}
               onChange={(e) => setBasePrompt(e.target.value)}
               placeholder="Ej: Fondo de cocina de lujo, luz solar suave de la mañana, efecto bokeh..."
@@ -114,8 +117,15 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Descripción Breve</label>
+                      <label
+                        htmlFor={`description-${i}`}
+                        className="text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                      >
+                        Descripción Breve
+                      </label>
                       <input
+                        id={`description-${i}`}
+                        name={`description-${i}`}
                         type="text"
                         value={item.description}
                         onChange={(e) => updateDescription(i, e.target.value)}
