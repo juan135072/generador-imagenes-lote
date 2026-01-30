@@ -27,7 +27,7 @@ This is a Next.js application that autonomously generates professional product p
 - **Naming**: `PascalCase` for components, `camelCase` for functions/variables.
 
 ## Key Files
-- `src/hooks/useImageProcessor.ts`: Orchestrates the entire AI pipeline logic.
-- `src/lib/ai/gemini.ts`: Handles product image analysis.
-- `src/lib/ai/cerebras.ts`: Generates creative prompts.
+- `src/hooks/useImageProcessor.ts`: Orchestrates the processing pipeline using **Global Base Prompts** and **Per-Image Descriptions**.
+- `src/lib/ai/cerebras.ts`: Merges base style prompts with specific product details.
+- `src/lib/ai/gemini.ts`: Analyzes technical product features for AI-enhanced prompting.
 - `src/lib/background-removal.ts`: Handles client-side background removal.
