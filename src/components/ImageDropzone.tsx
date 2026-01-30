@@ -42,7 +42,7 @@ export function ImageDropzone({ onFilesAdded, className, disabled }: ImageDropzo
       )}
     >
       <input {...getInputProps()} />
-      
+
       <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
         <div className={clsx(
           "p-4 rounded-full transition-colors",
@@ -54,7 +54,7 @@ export function ImageDropzone({ onFilesAdded, className, disabled }: ImageDropzo
             <ImageIcon className="w-8 h-8" />
           )}
         </div>
-        
+
         <div className="space-y-1">
           <p className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
             {isDragActive ? "Suelta las imágenes aquí" : "Arrastra y suelta tus imágenes"}
@@ -98,9 +98,9 @@ export function ImagePreview({ file, onRemove }: ImagePreviewProps) {
         fill
         className="object-cover transition-transform group-hover:scale-105"
       />
-      
+
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-      
+
       <button
         onClick={(e) => {
           e.stopPropagation();

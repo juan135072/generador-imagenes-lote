@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { ImageDropzone, ImagePreview } from "@/components/ImageDropzone";
 import { Sparkles, Zap, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { useImageProcessor, ProcessedItem } from "@/hooks/useImageProcessor";
+import { useImageProcessor, ProcessedItem, ProcessStatus } from "@/hooks/useImageProcessor";
 import { clsx } from "clsx";
 
 export default function Home() {
   const { items, processItem } = useImageProcessor();
   const [pendingItems, setPendingItems] = useState<{ file: File, description: string }[]>([]);
-  const [basePrompt, setBasePrompt] = useState('Studio lighting, professional product photography, 8k resolution, highly detailed, minimalist background');
+  const [basePrompt, setBasePrompt] = useState('Iluminación de estudio, fotografía de producto profesional, resolución 8k, altamente detallado, fondo minimalista');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFilesAdded = (newFiles: File[]) => {
@@ -50,10 +50,10 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <button className="text-sm font-medium hover:opacity-80 transition-opacity">
-              History
+              Historial
             </button>
             <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
-            <span className="text-xs font-mono text-zinc-400">v1.0.0 (Free Tier)</span>
+            <span className="text-xs font-mono text-zinc-400">v1.0.0 (Versión Gratuita)</span>
           </div>
         </div>
       </header>
@@ -62,11 +62,10 @@ export default function Home() {
         {/* Intro */}
         <div className="text-center space-y-4 max-w-2xl mx-auto pb-8">
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-900 via-zinc-600 to-zinc-900 dark:from-white dark:via-zinc-400 dark:to-white bg-clip-text text-transparent pb-2">
-            Product Photos at Scale
+            Generador de Fotos de Producto
           </h2>
           <p className="text-lg text-zinc-500 dark:text-zinc-400">
-            Upload generic product shots. Define your brand style.
-            <br />Powered by <span className="text-indigo-500 font-medium">Gemini</span>, <span className="text-blue-500 font-medium">Cerebras</span> & <span className="text-orange-500 font-medium">Flux</span>.
+            Sube fotos genéricas de tus productos y crea imágenes de marketing profesionales al instante.
           </p>
         </div>
 
@@ -75,15 +74,15 @@ export default function Home() {
           <div className="space-y-6">
             <h3 className="text-xl font-semibold flex items-center gap-2">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 text-sm font-bold">1</div>
-              Global Base Prompt (Brand Style)
+              Prompt Base Global (Estilo de Marca)
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Define the common background, lighting, and mood for ALL images in this batch.
+              Define el fondo común, la iluminación y el ambiente para TODAS las imágenes de este lote.
             </p>
             <textarea
               value={basePrompt}
               onChange={(e) => setBasePrompt(e.target.value)}
-              placeholder="e.g., Luxury kitchen background, soft morning sunlight, bokeh effect..."
+              placeholder="Ej: Fondo de cocina de lujo, luz solar suave de la mañana, efecto bokeh..."
               className="w-full h-32 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-purple-500 outline-none transition-all resize-none font-medium"
             />
           </div>
@@ -95,7 +94,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold flex items-center gap-2">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-sm font-bold">2</div>
-                Upload Products & Describe
+                Sube Productos y Describe
               </h3>
             </div>
 
@@ -114,12 +113,12 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Brief Description</label>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Descripción Breve</label>
                       <input
                         type="text"
                         value={item.description}
                         onChange={(e) => updateDescription(i, e.target.value)}
-                        placeholder="e.g., Red sneaker, Suela blanca..."
+                        placeholder="Ej: Zapatilla roja, suela blanca..."
                         className="w-full bg-white dark:bg-zinc-900 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                       />
                     </div>
@@ -142,12 +141,12 @@ export default function Home() {
                 {isProcessing ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing Batch...
+                    Procesando Lote...
                   </>
                 ) : (
                   <>
                     <Zap className="w-6 h-6 fill-current text-yellow-500" />
-                    Generate {pendingItems.length} Marketing Photos
+                    Generar {pendingItems.length} Fotos de Marketing
                   </>
                 )}
               </button>
@@ -165,6 +164,16 @@ function ProcessedItemCard({ item }: { item: ProcessedItem }) {
   const isComplete = item.status === 'completed';
   const isLoading = !isError && !isComplete;
 
+  const statusMap: Record<ProcessStatus, string> = {
+    idle: 'En espera',
+    removing_bg: 'Quitando fondo',
+    analyzing: 'Analizando',
+    prompting: 'Creando prompt',
+    generating: 'Generando',
+    completed: 'Completado',
+    error: 'Error'
+  };
+
   return (
     <div className="group relative aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
       <div className={clsx("absolute inset-0 transition-opacity duration-500", isLoading ? "opacity-50 blur-sm scale-110" : "opacity-100")}>
@@ -174,7 +183,7 @@ function ProcessedItemCard({ item }: { item: ProcessedItem }) {
       <div className="absolute inset-x-0 bottom-0 p-3 bg-black/60 backdrop-blur-md border-t border-white/10">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[10px] font-medium text-white truncate uppercase tracking-wider">
-            {item.status.replace('_', ' ')}
+            {statusMap[item.status]}
           </span>
           {isLoading && <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />}
           {isComplete && <CheckCircle2 className="w-3 h-3 text-green-400" />}
