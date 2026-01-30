@@ -8,6 +8,11 @@ export interface ProcessedImage {
 
 export async function removeImageBackground(imageFile: File): Promise<Blob> {
     try {
+        // Check for secure context (HTTPS or localhost)
+        if (typeof window !== 'undefined' && !window.isSecureContext) {
+            throw new Error("La eliminación de fondo requiere una conexión segura (HTTPS). Por favor, usa un dominio con SSL.");
+        }
+
         // imgly runs entirely in the browser using WASM
         const msg = "Removing background...";
         console.time(msg);
