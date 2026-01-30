@@ -1,11 +1,17 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+let genAI: GoogleGenerativeAI | null = null;
 
-const genAI = new GoogleGenerativeAI(apiKey || "");
+const getGenAI = () => {
+    if (genAI) return genAI;
+    const key = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+    genAI = new GoogleGenerativeAI(key);
+    return genAI;
+};
 
 export async function analyzeProductImage(imageFile: File): Promise<string> {
-    if (!apiKey) {
+    const key = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!key) {
         if (process.env.NODE_ENV === 'development') {
             // Allow mock in dev if no key
             console.warn("Gemini API Key missing, returning mock description");
@@ -14,7 +20,7 @@ export async function analyzeProductImage(imageFile: File): Promise<string> {
         throw new Error("Gemini API Key not found");
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Convert File to Base64 (Browser compatible)
     const base64String = await new Promise<string>((resolve, reject) => {

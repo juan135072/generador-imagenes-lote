@@ -1,10 +1,17 @@
 import OpenAI from 'openai';
 
-const client = new OpenAI({
-    apiKey: process.env.NEXT_PUBLIC_CEREBRAS_API_KEY,
-    baseURL: "https://api.cerebras.ai/v1",
-    dangerouslyAllowBrowser: true // Client-side demo allow
-});
+// Lazy initialize client to avoid build-time errors when API key is missing
+let client: OpenAI | null = null;
+
+const getClient = () => {
+    if (client) return client;
+    client = new OpenAI({
+        apiKey: process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || 'no-key-at-build-time',
+        baseURL: "https://api.cerebras.ai/v1",
+        dangerouslyAllowBrowser: true
+    });
+    return client;
+};
 
 export async function generateCreativePrompt(productDescription: string, brandStyle: string): Promise<{ positive: string, negative: string }> {
     if (!process.env.NEXT_PUBLIC_CEREBRAS_API_KEY) {
@@ -23,7 +30,7 @@ Debes devolver un JSON con dos campos:
 - "negative": Prompt negativo.`;
 
     try {
-        const completion = await client.chat.completions.create({
+        const completion = await getClient().chat.completions.create({
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: `Producto: ${productDescription}\nEstilo: ${brandStyle}` }
