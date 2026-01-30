@@ -4,7 +4,10 @@
  */
 
 export async function generateImage(prompt: string): Promise<string> {
-    const apiToken = process.env.HF_TOKEN || process.env.NEXT_PUBLIC_HF_TOKEN;
+    const apiToken = process.env.HF_TOKEN ||
+        process.env.NEXT_PUBLIC_HF_TOKEN ||
+        process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY ||
+        process.env.NEXT_PUBLIC_HUGGINFACE_API_KEY; // Matching user's screenshot spelling
 
     if (!apiToken) {
         throw new Error("Hugging Face API Token is missing");
