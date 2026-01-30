@@ -11,10 +11,10 @@ description: Procesa imágenes de productos para generar fotos de marketing esti
 - El usuario quiere procesar un lote de imágenes.
 
 ## Flujo de trabajo
-1.  **Quitar Fondo**: La imagen original se procesa para eliminar el fondo usando `src/lib/background-removal.ts`.
-2.  **Analizar Producto**: Se usa Gemini (`src/lib/ai/gemini.ts`) para entender qué es el objeto.
-3.  **Generar Prompt**: Se usa Cerebras (`src/lib/ai/cerebras.ts`) para crear un prompt creativo basado en un estilo.
-4.  **Generar Nueva Imagen**: Se usa el modelo de inpainting (`src/lib/ai/image-gen.ts`) para fusionar el objeto sin fondo con un nuevo entorno.
+1.  **Quitar Fondo**: RMBG procesa la imagen para eliminar el fondo.
+2.  **Analizar Producto**: Gemini identifica detalles técnicos (IA Description).
+3.  **Generar Prompt**: Cerebras fusiona el **Prompt Base (estilo)**, la **Descripción del Usuario** y el **Análisis de IA**.
+4.  **Generar Nueva Imagen**: El modelo de inpainting coloca el producto en el nuevo escenario.
 
 ## Instrucciones
 - Mantener la integridad visual del producto original siempre (no alucinar el producto).
