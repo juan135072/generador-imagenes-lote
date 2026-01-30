@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { removeImageBackground } from '../lib/background-removal';
-import { analyzeProductImage } from '../lib/ai/gemini';
+import { analyzeProductImage } from '../lib/ai/groq'; // Changed from gemini to groq
 import { generateCreativePrompt } from '../lib/ai/cerebras';
-import { generateBackground } from '../lib/ai/image-gen';
+import { generateImage } from '../lib/ai/huggingface'; // Changed from generic image-gen
 
 export type ProcessStatus = 'idle' | 'removing_bg' | 'analyzing' | 'prompting' | 'generating' | 'completed' | 'error';
 
@@ -33,8 +33,14 @@ export function useImageProcessor() {
             const noBgBlob = await removeImageBackground(file);
             setItems(prev => prev.map(item => item.id === id ? { ...item, noBgBlob, status: 'analyzing' } : item));
 
-            // 2. Analyze Product (Gemini) - Returns AI technical details
-            const aiDescription = await analyzeProductImage(file);
+            // 2. Analyze Product (Groq Llama Vision) - Returns AI technical details
+            // Convert file to base64 for Groq
+            const base64Image = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            const aiDescription = await analyzeProductImage(base64Image);
             // We keep both: user input for intent, AI for technical details
             setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'prompting' } : item));
 
@@ -42,8 +48,10 @@ export function useImageProcessor() {
             const prompts = await generateCreativePrompt(aiDescription, userDescription, basePrompt);
             setItems(prev => prev.map(item => item.id === id ? { ...item, prompts, status: 'generating' } : item));
 
-            // 4. Generate Image (Flux/Inpainting)
-            const finalImage = await generateBackground(noBgBlob, prompts.positive);
+            // 4. Generate Image (Hugging Face FLUX.1 [schnell])
+            const finalImageBase64 = await generateImage(prompts.positive);
+            // Convert base64 back to Blob for storage
+            const finalImage = await (await fetch(finalImageBase64)).blob();
             setItems(prev => prev.map(item => item.id === id ? { ...item, finalImage, status: 'completed' } : item));
 
         } catch (error: any) {

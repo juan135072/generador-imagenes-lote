@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { ImageDropzone, ImagePreview } from "@/components/ImageDropzone";
 import { Sparkles, Zap, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useImageProcessor, ProcessedItem, ProcessStatus } from "@/hooks/useImageProcessor";
@@ -163,6 +164,15 @@ function ProcessedItemCard({ item }: { item: ProcessedItem }) {
   const isError = item.status === 'error';
   const isComplete = item.status === 'completed';
   const isLoading = !isError && !isComplete;
+  const [finalImageUrl, setFinalImageUrl] = useState<string | null>(null);
+
+  useEffect(() => { // Changed from useState to useEffect
+    if (item.finalImage) {
+      const url = URL.createObjectURL(item.finalImage);
+      setFinalImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [item.finalImage]); // Dependency array to re-run when finalImage changes
 
   const statusMap: Record<ProcessStatus, string> = {
     idle: 'En espera',
@@ -175,9 +185,18 @@ function ProcessedItemCard({ item }: { item: ProcessedItem }) {
   };
 
   return (
-    <div className="group relative aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
+    <div className="group relative aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 shadow-sm hover:shadow-md transition-all">
       <div className={clsx("absolute inset-0 transition-opacity duration-500", isLoading ? "opacity-50 blur-sm scale-110" : "opacity-100")}>
-        <ImagePreview file={item.originalFile} onRemove={() => { }} />
+        {isComplete && finalImageUrl ? (
+          <Image
+            src={finalImageUrl}
+            alt="Final generated"
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <ImagePreview file={item.originalFile} onRemove={() => { }} />
+        )}
       </div>
 
       <div className="absolute inset-x-0 bottom-0 p-3 bg-black/60 backdrop-blur-md border-t border-white/10">
@@ -191,9 +210,22 @@ function ProcessedItemCard({ item }: { item: ProcessedItem }) {
         </div>
       </div>
 
+      {isComplete && finalImageUrl && (
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <a
+            href={finalImageUrl}
+            download={`foto-producto-${item.id}.png`}
+            className="bg-white text-black px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:scale-105 transition-transform"
+          >
+            <Zap className="w-4 h-4 fill-current text-yellow-500" />
+            Descargar HD
+          </a>
+        </div>
+      )}
+
       {isError && (
         <div className="absolute inset-0 flex items-center justify-center p-2 bg-black/80">
-          <p className="text-xs text-red-200 text-center">{item.error?.slice(0, 50)}...</p>
+          <p className="text-xs text-red-200 text-center">{item.error?.slice(0, 100)}</p>
         </div>
       )}
     </div>
