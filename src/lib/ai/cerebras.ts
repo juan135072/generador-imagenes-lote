@@ -13,27 +13,37 @@ const getClient = () => {
     return client;
 };
 
-export async function generateCreativePrompt(productDescription: string, brandStyle: string): Promise<{ positive: string, negative: string }> {
-    if (!process.env.NEXT_PUBLIC_CEREBRAS_API_KEY) {
+export async function generateCreativePrompt(
+    aiDescription: string,
+    userDescription: string,
+    basePrompt: string
+): Promise<{ positive: string, negative: string }> {
+    const key = process.env.NEXT_PUBLIC_CEREBRAS_API_KEY;
+    if (!key) {
         console.warn("Cerebras API Key missing");
         return {
-            positive: `Product photography of ${productDescription} in ${brandStyle} style`,
+            positive: `${basePrompt}, featuring ${userDescription}`,
             negative: "low quality"
         };
     }
 
     const systemPrompt = `Eres un Prompt Engineer experto en Stable Diffusion y FLUX.1.
-Tu trabajo es escribir prompts para generar fondos publicitarios de alta calidad para productos.
-El usuario te dará una DESCRIPCIÓN DEL PRODUCTO y un ESTILO DE MARCA.
-Debes devolver un JSON con dos campos:
-- "positive": El prompt positivo. DEBE INCLUIR términos de iluminación profesional (soft lighting, studio lighting), calidad (8k, hdr) y describir el escenario basado en el estilo.
-- "negative": Prompt negativo.`;
+Tu trabajo es crear el prompt de imagen FINAL fusionando tres componentes:
+1. BASE PROMPT: La guía de estilo y escenario general definida por el usuario.
+2. USER DESCRIPTION: Lo que el usuario dice que es el producto.
+3. AI ANALYSIS: Detalles técnicos identificados por la IA (materiales, colores, logos).
+
+Debes devolver un JSON con:
+- "positive": Un prompt en INGLÉS altamente detallado que ponga el producto en el escenario del BASE PROMPT. 
+- "negative": Prompt negativo estándar.
+
+IMPORTANTE: El producto debe ser el foco central. No modifiques el producto, solo el entorno.`;
 
     try {
         const completion = await getClient().chat.completions.create({
             messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Producto: ${productDescription}\nEstilo: ${brandStyle}` }
+                { role: 'user', content: `BASE PROMPT: ${basePrompt}\nUSER DESCRIPTION: ${userDescription}\nAI ANALYSIS: ${aiDescription}` }
             ],
             model: 'llama3.1-70b',
             response_format: { type: "json_object" }
@@ -46,7 +56,7 @@ Debes devolver un JSON con dos campos:
     } catch (error) {
         console.error("Cerebras Error:", error);
         return {
-            positive: `${brandStyle} background for ${productDescription}, professional photography, 8k, soft shadows`,
+            positive: `${basePrompt}, ${userDescription}, professional photography, studio lighting`,
             negative: "ugly, blurry, low quality"
         };
     }

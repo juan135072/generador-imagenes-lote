@@ -8,45 +8,32 @@ import { clsx } from "clsx";
 
 export default function Home() {
   const { items, processItem } = useImageProcessor();
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [selectedStyle, setSelectedStyle] = useState('Minimalist Studio');
+  const [pendingItems, setPendingItems] = useState<{ file: File, description: string }[]>([]);
+  const [basePrompt, setBasePrompt] = useState('Studio lighting, professional product photography, 8k resolution, highly detailed, minimalist background');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Combine pending files with processed items for display
-  const allItems = [
-    ...items,
-    ...pendingFiles.map(f => ({ id: `pending-${f.name}`, originalFile: f, status: 'idle' as const }))
-  ];
-
   const handleFilesAdded = (newFiles: File[]) => {
-    setPendingFiles(prev => [...prev, ...newFiles]);
+    const newItems = newFiles.map(file => ({ file, description: "" }));
+    setPendingItems(prev => [...prev, ...newItems]);
   };
 
-  const removePendingFile = (index: number) => {
-    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  const removePendingItem = (index: number) => {
+    setPendingItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateDescription = (index: number, description: string) => {
+    setPendingItems(prev => prev.map((item, i) => i === index ? { ...item, description } : item));
   };
 
   const startProcessing = async () => {
-    if (pendingFiles.length === 0) return;
+    if (pendingItems.length === 0) return;
     setIsProcessing(true);
 
-    // Process sequentially or parallel
-    for (const file of pendingFiles) {
-      await processItem(file, selectedStyle);
+    for (const item of pendingItems) {
+      await processItem(item.file, item.description, basePrompt);
     }
 
-    setPendingFiles([]); // Clear pending as they move to 'items' inside the hook logic? 
-    // Wait, the hook adds to its own state. 
-    // We should clear pending files immediately as they are added to the processor queue?
-    // Actually, processItem is async but we called it in a loop.
-    // Let's just clear pending files after loop starts? 
-    // Better: Helper logic. The hook keeps track of 'processed' items.
-    // We should probably just pass the files to the hook to manage entirely.
-    // For simplicity: We will clear pendingFiles and rely on 'items' from hook.
-    // However, the hook 'processItem' adds to state. 
-    // So if we iterate, we are adding them.
-
-    setPendingFiles([]);
+    setPendingItems([]);
     setIsProcessing(false);
   };
 
@@ -78,38 +65,63 @@ export default function Home() {
             Product Photos at Scale
           </h2>
           <p className="text-lg text-zinc-500 dark:text-zinc-400">
-            Upload generic product shots. Get studio-quality marketing assets.
+            Upload generic product shots. Define your brand style.
             <br />Powered by <span className="text-indigo-500 font-medium">Gemini</span>, <span className="text-blue-500 font-medium">Cerebras</span> & <span className="text-orange-500 font-medium">Flux</span>.
           </p>
         </div>
 
-        {/* Upload & Gallery */}
+        {/* 1. Base Prompt (Global) */}
+        <section className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-sm transition-all">
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold flex items-center gap-2">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 text-sm font-bold">1</div>
+              Global Base Prompt (Brand Style)
+            </h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Define the common background, lighting, and mood for ALL images in this batch.
+            </p>
+            <textarea
+              value={basePrompt}
+              onChange={(e) => setBasePrompt(e.target.value)}
+              placeholder="e.g., Luxury kitchen background, soft morning sunlight, bokeh effect..."
+              className="w-full h-32 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-purple-500 outline-none transition-all resize-none font-medium"
+            />
+          </div>
+        </section>
+
+        {/* 2. Upload & Gallery */}
         <section className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-sm transition-all hover:shadow-md">
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold flex items-center gap-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-sm font-bold">1</div>
-                Upload Products
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-sm font-bold">2</div>
+                Upload Products & Describe
               </h3>
-              {(allItems.length > 0) && (
-                <span className="text-sm text-zinc-500">{allItems.length} items</span>
-              )}
             </div>
 
             <ImageDropzone onFilesAdded={handleFilesAdded} disabled={isProcessing} className="max-w-2xl mx-auto" />
 
             {/* Combined Gallery */}
-            {allItems.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Pending Files */}
-                {pendingFiles.map((file, i) => (
-                  <div key={`pending-${i}`} className="relative">
-                    <ImagePreview
-                      file={file}
-                      onRemove={() => removePendingFile(i)}
-                    />
-                    <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-zinc-100/90 text-xs font-medium text-zinc-600 backdrop-blur-sm">
-                      Pending
+            {(pendingItems.length > 0 || items.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Pending Items with Inputs */}
+                {pendingItems.map((item, i) => (
+                  <div key={`pending-${i}`} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                    <div className="relative aspect-video rounded-xl overflow-hidden bg-black/5">
+                      <ImagePreview
+                        file={item.file}
+                        onRemove={() => removePendingItem(i)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Brief Description</label>
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateDescription(i, e.target.value)}
+                        placeholder="e.g., Red sneaker, Suela blanca..."
+                        className="w-full bg-white dark:bg-zinc-900 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
+                      />
                     </div>
                   </div>
                 ))}
@@ -120,57 +132,22 @@ export default function Home() {
                 ))}
               </div>
             )}
-          </div>
-        </section>
 
-        {/* Configuration & Controls */}
-        <section className={clsx("transition-all duration-500", pendingFiles.length === 0 ? "opacity-50 pointer-events-none blur-sm grayscale" : "opacity-100")}>
-          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-sm space-y-8 relative overflow-hidden">
-
-            {/* Dynamic background gradient */}
-            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="flex items-center justify-between relative z-10">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 text-sm font-bold">2</div>
-                Select Branding Style
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
-              {['Minimalist Studio', 'Neon Cyberpunk', 'Nature Outdoor', 'Luxury Gold', 'Industrial Concrete'].map((style) => (
-                <button
-                  key={style}
-                  onClick={() => setSelectedStyle(style)}
-                  className={clsx(
-                    "group relative h-24 rounded-xl border overflow-hidden text-left transition-all duration-200",
-                    selectedStyle === style ? "border-purple-500 ring-1 ring-purple-500 bg-purple-50/50 dark:bg-purple-900/20" : "border-zinc-200 dark:border-zinc-800 hover:border-purple-300 dark:hover:border-purple-700 bg-zinc-50 dark:bg-zinc-900"
-                  )}
-                >
-                  <div className="relative p-4 z-10 flex flex-col justify-center h-full">
-                    <span className={clsx("font-medium block", selectedStyle === style ? "text-purple-700 dark:text-purple-300" : "text-zinc-700 dark:text-zinc-300")}>
-                      {style}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800 relative z-10">
+            <div className="flex justify-end pt-8 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 onClick={startProcessing}
-                disabled={isProcessing}
-                className="flex items-center gap-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black px-8 py-3.5 rounded-xl font-bold text-lg hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-zinc-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isProcessing || pendingItems.length === 0}
+                className="flex items-center gap-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black px-10 py-4 rounded-2xl font-bold text-xl hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-zinc-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Generating...
+                    Processing Batch...
                   </>
                 ) : (
                   <>
-                    <Zap className="w-5 h-5 fill-current" />
-                    Generate {pendingFiles.length} Images
+                    <Zap className="w-6 h-6 fill-current text-yellow-500" />
+                    Generate {pendingItems.length} Marketing Photos
                   </>
                 )}
               </button>
@@ -184,23 +161,16 @@ export default function Home() {
 }
 
 function ProcessedItemCard({ item }: { item: ProcessedItem }) {
-  // Determine status color/icon
   const isError = item.status === 'error';
   const isComplete = item.status === 'completed';
   const isLoading = !isError && !isComplete;
 
   return (
     <div className="group relative aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-      {/* Show Final or Original or NoBg */}
-      {/* If we have a final image (even if loading finished), show it? No, wait until completed. */}
-      {/* During processing, we might show the NoBg version as progress? */}
-
-      {/* Background Layer (Original or Processed) */}
       <div className={clsx("absolute inset-0 transition-opacity duration-500", isLoading ? "opacity-50 blur-sm scale-110" : "opacity-100")}>
         <ImagePreview file={item.originalFile} onRemove={() => { }} />
       </div>
 
-      {/* Overlay Status */}
       <div className="absolute inset-x-0 bottom-0 p-3 bg-black/60 backdrop-blur-md border-t border-white/10">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[10px] font-medium text-white truncate uppercase tracking-wider">
@@ -212,7 +182,6 @@ function ProcessedItemCard({ item }: { item: ProcessedItem }) {
         </div>
       </div>
 
-      {/* Error Message Tooltip */}
       {isError && (
         <div className="absolute inset-0 flex items-center justify-center p-2 bg-black/80">
           <p className="text-xs text-red-200 text-center">{item.error?.slice(0, 50)}...</p>
